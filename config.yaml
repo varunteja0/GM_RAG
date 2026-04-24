@@ -3,7 +3,7 @@
 
 # One or more absolute paths to local code repositories / doc folders to index.
 sources:
-  - /Users/varunteja/Desktop/GM_RAG/data
+  - /Users/varunteja/Desktop/GM_RAG
 
 # Where Chroma stores its persistent vector index.
 storage_dir: ./storage/chroma
@@ -14,7 +14,7 @@ collection: company_repo
 # Ollama settings (make sure `ollama serve` is running)
 ollama:
   base_url: http://localhost:11434
-  chat_model: llama3.1:8b          # try qwen2.5-coder:7b for code-heavy repos
+  chat_model: llama3.2:3b          # fast, fits M1/M2 Air. Use llama3.1:8b or qwen2.5-coder:7b if you have 16GB+ VRAM.
   embed_model: nomic-embed-text    # good general-purpose, fast, 768-dim
 
 # Chunking
@@ -78,4 +78,4 @@ max_file_size_mb: 2        # skip files larger than this
 # Server
 server:
   host: 0.0.0.0            # 0.0.0.0 so other employees on the LAN can reach it
-  port: 8000
+  port: 8008
