@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Company Knowledge Agent</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --text: #e6e6e6;
+      --muted: #8a93a6;
+      --accent: #5b8cff;
+      --user: #233044;
+      --bot: #1b2230;
+      --border: #242938;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column;
+    }
+    header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+    header .status { color: var(--muted); font-size: 12px; margin-left: auto; }
+    #chat {
+      flex: 1; overflow-y: auto; padding: 20px; max-width: 900px; width: 100%; margin: 0 auto;
+    }
+    .msg { padding: 12px 14px; border-radius: 10px; margin-bottom: 12px; white-space: pre-wrap; line-height: 1.45; }
+    .msg.user { background: var(--user); }
+    .msg.bot  { background: var(--bot); border: 1px solid var(--border); }
+    .role { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+    form {
+      display: flex; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);
+      max-width: 900px; width: 100%; margin: 0 auto;
+    }
+    textarea {
+      flex: 1; background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; font: inherit; resize: none; min-height: 42px; max-height: 160px;
+    }
+    button {
+      background: var(--accent); color: white; border: 0; border-radius: 8px; padding: 0 18px;
+      font-weight: 600; cursor: pointer;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    code { background: #0b0d12; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+    pre  { background: #0b0d12; padding: 10px; border-radius: 6px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Company Knowledge Agent</h1>
+    <span class="status" id="status">connecting…</span>
+  </header>
+
+  <div id="chat"></div>
+
+  <form id="form">
+    <textarea id="input" placeholder="Ask about the repo, e.g. 'where is the auth middleware defined?'" rows="1"></textarea>
+    <button id="send">Send</button>
+  </form>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const statusEl = document.getElementById('status');
+    const sessionId = 'web-' + Math.random().toString(36).slice(2, 10);
+
+    async function health() {
+      try {
+        const r = await fetch('/health');
+        const d = await r.json();
+        statusEl.textContent = `${d.chat_model} · ${d.indexed_chunks} chunks`;
+      } catch {
+        statusEl.textContent = 'offline';
+      }
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.innerHTML = `<div class="role">${role === 'user' ? 'you' : 'agent'}</div>` +
+                      escapeHtml(text);
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage('user', text);
+      input.value = '';
+      sendBtn.disabled = true;
+      const thinking = addMessage('bot', 'thinking…');
+
+      try {
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, session_id: sessionId }),
+        });
+        const d = await r.json();
+        thinking.innerHTML = `<div class="role">agent</div>` +
+                             escapeHtml(d.answer || d.detail || '(no answer)');
+      } catch (err) {
+        thinking.innerHTML = `<div class="role">agent</div>error: ${err}`;
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+    });
+
+    health();
+  </script>
+</body>
+</html>

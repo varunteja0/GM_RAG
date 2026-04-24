@@ -1,0 +1,81 @@
+# GM_RAG configuration
+# Edit this file to point at your repositories and tune behavior.
+
+# One or more absolute paths to local code repositories / doc folders to index.
+sources:
+  - /Users/varunteja/Desktop/GM_RAG/data
+
+# Where Chroma stores its persistent vector index.
+storage_dir: ./storage/chroma
+
+# Collection name inside Chroma
+collection: company_repo
+
+# Ollama settings (make sure `ollama serve` is running)
+ollama:
+  base_url: http://localhost:11434
+  chat_model: llama3.1:8b          # try qwen2.5-coder:7b for code-heavy repos
+  embed_model: nomic-embed-text    # good general-purpose, fast, 768-dim
+
+# Chunking
+chunking:
+  chunk_size: 1200        # characters
+  chunk_overlap: 150
+
+# Retrieval
+retrieval:
+  top_k: 6
+  max_context_chars: 12000
+
+# File filters
+ignore_dirs:
+  - .git
+  - node_modules
+  - .venv
+  - venv
+  - __pycache__
+  - dist
+  - build
+  - .next
+  - .turbo
+  - target
+  - storage
+
+# Only index these extensions (anything else is skipped).
+# Add/remove to fit your stack.
+allowed_extensions:
+  - .py
+  - .js
+  - .ts
+  - .tsx
+  - .jsx
+  - .java
+  - .go
+  - .rs
+  - .rb
+  - .cs
+  - .cpp
+  - .c
+  - .h
+  - .hpp
+  - .md
+  - .mdx
+  - .txt
+  - .rst
+  - .yaml
+  - .yml
+  - .json
+  - .toml
+  - .sql
+  - .sh
+  - .html
+  - .css
+  - .pdf
+  - .docx
+
+max_file_size_mb: 2        # skip files larger than this
+
+# Server
+server:
+  host: 0.0.0.0            # 0.0.0.0 so other employees on the LAN can reach it
+  port: 8000
